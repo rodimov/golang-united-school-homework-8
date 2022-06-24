@@ -139,6 +139,16 @@ func writeUsersToJSON(users []User, fileName string) {
 	}
 }
 
+func getUserById(id string, users []User) *User {
+	for _, user := range users {
+		if user.Id == id {
+			return &user
+		}
+	}
+
+	return nil
+}
+
 func printList(fileName string, writer io.Writer) {
 	_, err := writer.Write(readAll(fileName))
 
@@ -161,6 +171,12 @@ func addItem(item string, fileName string) error {
 		log.Fatal(err)
 	}
 
+	userById := getUserById(user.Id, users)
+
+	if userById != nil {
+		return fmt.Errorf("Item with id %s already exists", user.Id)
+	}
+
 	writeUsersToJSON(append(users, user), fileName)
 
 	return nil
@@ -172,6 +188,11 @@ func removeUser(id, fileName string) error {
 	}
 
 	users := readUsersFromJSON(fileName)
+	userById := getUserById(id, users)
+
+	if userById != nil {
+		return fmt.Errorf("Item with id %s not found", id)
+	}
 
 	var usersToWrite []User
 
@@ -193,13 +214,7 @@ func findUserById(id, fileName string, writer io.Writer) error {
 
 	users := readUsersFromJSON(fileName)
 
-	var user *User = nil
-
-	for _, i := range users {
-		if i.Id == id {
-			user = &i
-		}
-	}
+	user := getUserById(id, users)
 
 	if user == nil {
 		return nil
