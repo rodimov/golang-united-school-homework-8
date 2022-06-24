@@ -57,9 +57,9 @@ func Perform(args Arguments, writer io.Writer) error {
 	case "list":
 		printList(fileName, writer)
 	case "add":
-		err = addItem(item, fileName)
+		err = addItem(item, fileName, writer)
 	case "remove":
-		err = removeUser(id, fileName)
+		err = removeUser(id, fileName, writer)
 	case "findById":
 		err = findUserById(id, fileName, writer)
 	}
@@ -115,8 +115,14 @@ func readAll(fileName string) []byte {
 }
 
 func readUsersFromJSON(fileName string) []User {
+	data := readAll(fileName)
+
+	if string(data) == "" {
+		return []User{}
+	}
+
 	var users []User
-	err := json.Unmarshal(readAll(fileName), &users)
+	err := json.Unmarshal(data, &users)
 
 	if err != nil {
 		log.Fatal(err)
@@ -157,7 +163,7 @@ func printList(fileName string, writer io.Writer) {
 	}
 }
 
-func addItem(item string, fileName string) error {
+func addItem(item string, fileName string, writer io.Writer) error {
 	if item == "" {
 		return errors.New("-item flag has to be specified")
 	}
@@ -174,7 +180,13 @@ func addItem(item string, fileName string) error {
 	userById := getUserById(user.Id, users)
 
 	if userById != nil {
-		return fmt.Errorf("Item with id %s already exists", user.Id)
+		_, err = writer.Write([]byte("Item with id " + user.Id + " already exists"))
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		return nil
 	}
 
 	writeUsersToJSON(append(users, user), fileName)
@@ -182,7 +194,7 @@ func addItem(item string, fileName string) error {
 	return nil
 }
 
-func removeUser(id, fileName string) error {
+func removeUser(id, fileName string, writer io.Writer) error {
 	if id == "" {
 		return errors.New("-id flag has to be specified")
 	}
@@ -190,8 +202,14 @@ func removeUser(id, fileName string) error {
 	users := readUsersFromJSON(fileName)
 	userById := getUserById(id, users)
 
-	if userById != nil {
-		return fmt.Errorf("Item with id %s not found", id)
+	if userById == nil {
+		_, err := writer.Write([]byte("Item with id " + id + " not found"))
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		return nil
 	}
 
 	var usersToWrite []User
