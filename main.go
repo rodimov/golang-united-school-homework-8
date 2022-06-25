@@ -1,4 +1,4 @@
-package io_context_solution
+package main
 
 import (
 	"encoding/json"
